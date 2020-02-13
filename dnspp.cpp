@@ -1,5 +1,7 @@
 #include "dnspp.hpp"
 
+#include <iostream>
+
 #include <boost/algorithm/string/split.hpp>
 
 namespace dnspp {
@@ -175,7 +177,8 @@ namespace dnspp {
         catch (rcode_t rc_err) {
           rc = rc_err;
         }
-        catch (...) {
+        catch (std::exception& e) {
+          std::cout << e.what() << std::endl;
           rc = RCODE_servfail;
         }
 
@@ -187,7 +190,7 @@ namespace dnspp {
         response_buf.push_back(0);response_buf.push_back(1); // 1 query
         response_buf.push_back(responses.an.size()>>8); response_buf.push_back(responses.an.size());
         response_buf.push_back(responses.ns.size()>>8); response_buf.push_back(responses.ns.size());
-        response_buf.push_back(0);response_buf.push_back(0); // No ad
+        response_buf.push_back(responses.ad.size()>>8); response_buf.push_back(responses.ad.size());
 
         dns_pack_to(response_buf, req);
 

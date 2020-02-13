@@ -82,6 +82,7 @@ namespace dnspp {
     struct concat_responses {
       std::vector<response> an;
       std::vector<response> ns;
+      std::vector<response> ad;
     };
 
     struct dns_concat {
@@ -91,15 +92,21 @@ namespace dnspp {
       result_type operator()(InputIterator first, InputIterator last) const {
         concat_responses ret;
         for (; first != last; ++first) {
-          for (const response& resp : *first) {
+          for (const response& resp : first->answer) {
             if (resp.get_type() == TYPE_NS)
               ret.ns.push_back(resp);
             else
               ret.an.push_back(resp);
           }
+          ret.ad.insert(ret.ad.end(), first->additional.begin(), first->additional.end());
         }
         return ret;
       }
+    };
+  public:
+    struct hook_ret {
+      std::vector<response> answer;
+      std::vector<response> additional;
     };
 
   private:
@@ -110,7 +117,7 @@ namespace dnspp {
   private:
     void start_receive();
   public:
-    boost::signals2::signal<std::vector<response>(const request&), dns_concat> recv;
+    boost::signals2::signal<hook_ret(const request&), dns_concat> recv;
 
   public:
     server(boost::asio::io_context* io_ctx, uint16_t port = 53);
