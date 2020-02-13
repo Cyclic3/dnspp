@@ -53,6 +53,9 @@ namespace dnspp {
     struct aaaa {
       boost::asio::ip::address_v6 addr;
     };
+    struct ns {
+      std::vector<std::string> nsdname;
+    };
     struct soa {
       std::vector<std::string> mname;
       std::vector<std::string> rname;
@@ -66,10 +69,10 @@ namespace dnspp {
     std::vector<std::string> name;
     class_t cls = CLASS_IN;
     uint32_t ttl = 0;
-    std::variant<txt, a, aaaa, soa> value;
+    std::variant<txt, a, aaaa, soa, ns> value;
 
     type_t get_type() const noexcept {
-      constexpr type_t arr[] = {TYPE_TXT, TYPE_A, TYPE_AAAA, TYPE_SOA};
+      constexpr type_t arr[] = {TYPE_TXT, TYPE_A, TYPE_AAAA, TYPE_SOA, TYPE_NS};
       return arr[value.index()];
     }
   };

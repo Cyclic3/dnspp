@@ -101,6 +101,10 @@ namespace dnspp {
     dns_pack_to(buf, soa.minimum);
   }
 
+  void dns_pack_to(std::vector<uint8_t>& buf, response::ns ns) {
+    dns_pack_to(buf, ns.nsdname);
+  }
+
   void dns_pack_to(std::vector<uint8_t>& buf, const response& res) {
     dns_pack_to(buf, res.name);
     dns_pack_to(buf, res.get_type());
