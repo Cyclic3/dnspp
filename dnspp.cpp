@@ -28,21 +28,41 @@ namespace dnspp {
     mask              = 0xffff
   };
 
+  void dns_pack_to(std::vector<uint8_t>& buf, uint32_t i) {
+    buf.reserve(buf.size() + 4);
+    buf.push_back(i >> 24); buf.push_back(i >> 16); buf.push_back(i >> 8); buf.push_back(i);
+  }
 
   void dns_pack_to(std::vector<uint8_t>& buf, std::string_view str) {
     buf.push_back(str.size());
     buf.insert(buf.end(), str.begin(), str.end());
   }
 
-  void dns_pack_to(std::vector<uint8_t>& buf, uint16_t i) {
-    buf.resize(buf.size() + 2);
+  void dns_pack_to(std::vector<uint8_t>& buf, type_t i) {
+    buf.reserve(buf.size() + 2);
     buf.push_back(i >> 8); buf.push_back(i);
   }
 
-  void dns_pack_to(std::vector<uint8_t>& buf, uint32_t i) {
-    buf.resize(buf.size() + 4);
-    buf.push_back(i >> 24); buf.push_back(i >> 16); buf.push_back(i >> 8); buf.push_back(i);
+  void dns_pack_to(std::vector<uint8_t>& buf, class_t i) {
+    buf.reserve(buf.size() + 2);
+    buf.push_back(i >> 8); buf.push_back(i);
   }
+
+  void dns_pack_to(std::vector<uint8_t>& buf, dns_header_flags i) {
+    buf.reserve(buf.size() + 2);
+    buf.push_back(i >> 8); buf.push_back(i);
+  }
+
+  void dns_pack_to(std::vector<uint8_t>& buf, rcode_t i) {
+    buf.reserve(buf.size() + 2);
+    buf.push_back(i >> 8); buf.push_back(i);
+  }
+
+  void dns_pack_to(std::vector<uint8_t>& buf, uint16_t i) {
+    buf.reserve(buf.size() + 2);
+    buf.push_back(i >> 8); buf.push_back(i);
+  }
+
 
   void dns_pack_to(std::vector<uint8_t>& buf, const std::vector<std::string>& vec) {
     for (auto& i : vec)
