@@ -12,19 +12,17 @@ int main(int argc, char** argv) {
 
   std::vector<std::pair<std::string, std::string>> msgs = {{"server", "Started"}};
   std::map<std::string, uint64_t> nonces;
-  uint64_t update = 0;
 
   d.recv.connect([&](const dnspp::request& req) -> dnspp::server::hook_ret {
-
     auto iter = std::find(req.name.begin(), req.name.end(), "dnschat");
-    std::vector<std::string> new_name{req.name.begin(), iter};
+    const std::vector<std::string> new_name{req.name.begin(), iter};
     if (iter == req.name.end()) {
       std::cout << "Rejecting ";
       for (auto& i : req.name) std::cout << i << '.';
       std::cout << std::endl;
       return {};
     }
-    std::vector<std::string> path{iter, req.name.end()};
+    const std::vector<std::string> path{iter, req.name.end()};
 
     dnspp::server::hook_ret ret;
 
@@ -32,33 +30,53 @@ int main(int argc, char** argv) {
       ret.answer.emplace_back(dnspp::response {
                          .name = req.name,
                          .value = dnspp::response::txt{.records={
-                           "Welcome to dnschat!",
-                           "",
-                           "To get started, use one of the following commands:"
+                           "Welcome to dnschat, the dns based chat system!",
                            ""
-                           "nslookup -type=txt poll.dnschat dns.c3murk.dev"
-                           ""
-                           "dig txt poll.dnschat.<dns>"
+                           "The chat server intercepts all commands to a domain with dnschat in it, "
+                           "but you should use the nameserver dns.c3murk.dev for best results, "
+                           "as the global DNS networks weren't really built for this.",
                            "",
-                           "Post using the domain <msg>.<uname>.<nonce>.dnschat.<dns>"
+                           "All commands are domains, which should be request with one of the following commands:"
+                           "",
+                           "    nslookup -type=txt <command>.dnschat.<optional domain> <optional nameserver>",
+                           "",
+                           "    dig txt poll.dnschat.<optional domain> <optional nameserver>",
+                           "",
+                           "Post using the command '<msg>.<uname>.<nonce>' (dns can support spaces, but your client may not)",
+                           "",
+                           "Since chat responses are served with TXT records, unless you use a custom nameserver "
+                           "you will probably lose the order of messages from the standard 'poll' command. If this is the case, ",
+                           "use whichever of 'poll-num' and 'poll-concat' take your fancy.",
                            "",
                            "Have fun!"
                         }}
                       });
     }
-    else if (new_name[0] == "poll") {
-      std::cout << "Poll" << std::endl;
+    else if (new_name.size() == 1 && new_name.front() == "poll") {
+      for (auto& i : msgs) {
+        ret.answer.emplace_back(dnspp::response {
+          .name = {i.first},
+          .value=dnspp::response::txt{.records={i.second}}
+        });
+      }
+    }
+    else if (new_name.size() == 1 && new_name.front() == "poll-num") {
+      size_t pos = 0;
+      for (auto& i : msgs) {
+        ret.answer.emplace_back(dnspp::response {
+          .name = req.name,
+          .value=dnspp::response::txt{.records={std::to_string(pos++), i.first, i.second}}
+        });
+      }
+    }
+    else if (new_name.size() == 1 && new_name.front() == "poll-concat") {
+      dnspp::response::txt rec;
+      for (auto& i : msgs)
+        rec.records.push_back(i.first + ": " + i.second);
       ret.answer.emplace_back(dnspp::response {
                          .name = req.name,
-                         .value=dnspp::response::txt{.records={"server.update", std::to_string(++update)}}
-                       });
-      for (auto& i : msgs) {
-        std::cout << '\t' << i.first << std::endl;
-        ret.answer.emplace_back(dnspp::response {
-                           .name = req.name,
-                           .value=dnspp::response::txt{.records={i.first, i.second}}
-                         });
-      }
+                         .value= std::move(rec)
+      });
     }
     else {
       auto& msg = req.name.at(0);
@@ -87,7 +105,6 @@ int main(int argc, char** argv) {
                          });
       }
     }
-    std::cout << "Done" << std::endl;
 
     return ret;
   });
