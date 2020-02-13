@@ -51,8 +51,12 @@ int main(int argc, char** argv) {
       auto nonce_iter = nonces.find(uname);
       if (nonce_iter == nonces.end()) {
         nonces.emplace(uname, i);
+        ret.emplace_back(dnspp::response {
+                           .name = req.name,
+                           .value = dnspp::response::txt{.records={"Registered user! Increment nonce and fire away!"}}
+                         });
       }
-      else if (nonce_iter->second <= i) {
+      else if (i <= nonce_iter->second) {
         ret.emplace_back(dnspp::response {
                            .name = req.name,
                            .value = dnspp::response::txt{.records={"Nonce needs to increase"}}
