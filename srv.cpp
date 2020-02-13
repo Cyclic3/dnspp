@@ -10,7 +10,7 @@ int main(int argc, char** argv) {
   std::vector<std::pair<std::string, std::string>> msgs;
 
   d.recv.connect([&](const dnspp::request& req) -> std::vector<dnspp::response> {
-    if (req.name.size() < 2 || req.name[req.name.size() - 2] != "dnschat")
+    if (req.name.size() < 2 || req.name.back() != "dnschat")
       return {};
 
     std::vector<dnspp::response> ret(1);
@@ -25,7 +25,7 @@ int main(int argc, char** argv) {
         val.records.emplace_back(i.first + ": " + i.second);
     }
     else {
-      msgs.emplace_back(req.name.at(1), req.name.at(2));
+      msgs.emplace_back(req.name.at(1), req.name.at(0));
       resp.value = dnspp::response::txt{.records={"Success"}};
     }
 
