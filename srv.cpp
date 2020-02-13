@@ -12,9 +12,9 @@ int main(int argc, char** argv) {
 
   std::vector<std::pair<std::string, std::string>> msgs = {{"server", "Started"}};
   std::map<std::string, uint64_t> nonces;
+  uint64_t update = 0;
 
   d.recv.connect([&](const dnspp::request& req) -> dnspp::server::hook_ret {
-    uint64_t update = 0;
 
     auto iter = std::find(req.name.begin(), req.name.end(), "dnschat");
     std::vector<std::string> new_name{req.name.begin(), iter};
