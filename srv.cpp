@@ -79,9 +79,9 @@ int main(int argc, char** argv) {
       });
     }
     else {
-      auto& msg = req.name.at(0);
-      auto& uname = req.name.at(1);
-      auto i = std::stoull(req.name.at(2));
+      auto& msg = new_name.at(0);
+      auto& uname = new_name.at(1);
+      auto i = std::stoull(new_name.at(2));
       auto nonce_iter = nonces.find(uname);
       if (nonce_iter == nonces.end()) {
         nonces.emplace(uname, i);
