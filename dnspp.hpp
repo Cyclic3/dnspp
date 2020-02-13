@@ -1,0 +1,108 @@
+#include <boost/asio/ip/udp.hpp>
+#include <boost/signals2.hpp>
+
+#include <optional>
+#include <variant>
+
+namespace dnspp {
+  enum type : uint16_t {
+    TYPE_A = 1,
+    TYPE_NS = 2,
+    TYPE_CNAME = 5,
+    TYPE_SOA = 6,
+    TYPE_PTR = 12,
+    TYPE_MX = 15,
+    TYPE_TXT = 16,
+    TYPE_RP = 17,
+    TYPE_SIG = 24,
+    TYPE_KEY = 25,
+    TYPE_AAAA = 28,
+    TYPE_LOC = 29,
+    TYPE_SRV = 33,
+    TYPE_SSHFP = 44,
+    TYPE_RRSIG = 36,
+  };
+
+  enum rcode : uint16_t {
+    RCODE_noerror     =  0,
+    RCODE_formerr     =  1,
+    RCODE_servfail    =  2,
+    RCODE_nxdomain    =  3,
+    RCODE_notimp      =  4,
+    RCODE_refused     =  5,
+    RCODE_mask        = 15,
+  };
+
+  enum cls : uint16_t {
+    CLASS_IN = 0x1
+  };
+
+  struct request {
+    std::vector<std::string> name;
+    cls cls = CLASS_IN;
+    type type;
+  };
+
+  struct response {
+    struct txt {
+      std::vector<std::string> records;
+    };
+    struct a {
+      boost::asio::ip::address_v4 addr;
+    };
+    struct aaaa {
+      boost::asio::ip::address_v6 addr;
+    };
+
+    std::vector<std::string> name;
+    cls cls = CLASS_IN;
+    uint32_t ttl = 0;
+    std::variant<txt, a, aaaa> value;
+
+    type get_type() const noexcept {
+      constexpr type arr[] = {TYPE_TXT, TYPE_A, TYPE_AAAA};
+      return arr[value.index()];
+    }
+  };
+
+  class server {
+  private:
+    struct concat_responses {
+      std::vector<response> an;
+      std::vector<response> ns;
+    };
+
+    struct dns_concat {
+      using result_type = concat_responses;
+
+      template<typename InputIterator>
+      result_type operator()(InputIterator first, InputIterator last) const {
+        concat_responses ret;
+        for (; first != last; ++first) {
+          for (const response& resp : *first) {
+            if (resp.get_type() == TYPE_NS)
+              ret.ns.push_back(resp);
+            else
+              ret.an.push_back(resp);
+          }
+        }
+        return ret;
+      }
+    };
+
+  private:
+    boost::asio::ip::udp::socket sock;
+    std::array<uint8_t, 512> buf;
+    boost::asio::ip::udp::endpoint remote;
+
+  private:
+    void start_receive();
+  public:
+    boost::signals2::signal<std::vector<response>(const request&), dns_concat> recv;
+
+  public:
+    server(boost::asio::io_context* io_ctx, uint16_t port = 53);
+  };
+
+  class client {};
+}
