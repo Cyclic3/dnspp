@@ -8,6 +8,7 @@ int main(int argc, char** argv) {
   dnspp::server d(&ctx, port);
 
   std::vector<std::pair<std::string, std::string>> msgs;
+  std::map<std::string, int> nonces;
 
   d.recv.connect([&](const dnspp::request& req) -> std::vector<dnspp::response> {
     auto iter = std::find(req.name.begin(), req.name.end(), "dnschat");
@@ -22,19 +23,19 @@ int main(int argc, char** argv) {
       ret.emplace_back(dnspp::response {
                          .name = req.name,
                          .value = dnspp::response::txt{.records={
-                                                         "Welcome to dnschat!",
-                                                         "",
-                                                         "To get started, use one of the following commands:"
-                                                         ""
-                                                         "nslookup -type=txt poll.dnschat dns.c3murk.dev"
-                                                         ""
-                                                         "dig txt poll.dnschat.<dns>"
-                                                         "",
-                                                         "Post using the domain <msg>.<uname>.dnschat.<dns>"
-                                                         "",
-                                                         "Have fun!"
-                                                       }}
-                       });
+                           "Welcome to dnschat!",
+                           "",
+                           "To get started, use one of the following commands:"
+                           ""
+                           "nslookup -type=txt poll.dnschat dns.c3murk.dev"
+                           ""
+                           "dig txt poll.dnschat.<dns>"
+                           "",
+                           "Post using the domain <msg>.<uname>.<nonce>.dnschat.<dns>"
+                           "",
+                           "Have fun!"
+                        }}
+                      });
     }
     else if (new_name[0] == "poll") {
       for (auto& i : msgs)
@@ -44,11 +45,27 @@ int main(int argc, char** argv) {
                          });
     }
     else {
-      msgs.emplace_back(req.name.at(1), new_name[0]);
-      ret.emplace_back(dnspp::response {
-                         .name = req.name,
-                         .value = dnspp::response::txt{.records={"Success"}}
-                       });
+      auto& msg = req.name.at(0);
+      auto& uname = req.name.at(1);
+      auto i = std::stoi(req.name.at(2));
+      auto nonce_iter = nonces.find(uname);
+      if (nonce_iter == nonces.end()) {
+        nonces.emplace(uname, i);
+      }
+      else if (nonce_iter->second <= i) {
+        ret.emplace_back(dnspp::response {
+                           .name = req.name,
+                           .value = dnspp::response::txt{.records={"Nonce needs to increase"}}
+                         });
+      }
+      else {
+        nonce_iter->second = i;
+        msgs.emplace_back(uname, msg);
+        ret.emplace_back(dnspp::response {
+                           .name = req.name,
+                           .value = dnspp::response::txt{.records={"Success"}}
+                         });
+      }
     }
 
     return ret;
