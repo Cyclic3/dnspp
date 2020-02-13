@@ -200,6 +200,9 @@ namespace dnspp {
         for (auto& i : responses.ns)
           dns_pack_to(response_buf, i);
 
+        for (auto& i : responses.ad)
+          dns_pack_to(response_buf, i);
+
         sock.async_send_to(boost::asio::buffer(response_buf), remote, [](auto...) {});
       }
       catch(...) { goto next; }

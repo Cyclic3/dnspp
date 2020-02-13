@@ -47,7 +47,6 @@ int main(int argc, char** argv) {
     else if (new_name[0] == "poll") {
       std::cout << "Poll" << std::endl;
       for (auto& i : msgs) {
-        continue;
         std::cout << '\t' << i.first << std::endl;
         ret.additional.emplace_back(dnspp::response {
                            .name = prepend(i.first, path),
