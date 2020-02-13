@@ -13,20 +13,21 @@ int main(int argc, char** argv) {
     if (req.name.size() < 2 || req.name.back() != "dnschat")
       return {};
 
-    std::vector<dnspp::response> ret(1);
-    auto& resp = ret.front();
-    resp.name = req.name;
+    std::vector<dnspp::response> ret;
 
-    if (req.name.at(0) == "poll") {
-      std::vector<dnspp::response> ret;
-      resp.value = dnspp::response::txt{};
-      auto& val = std::get<dnspp::response::txt>(resp.value);
+    if (req.name.size() == 2 && req.name.at(0) == "poll") {
       for (auto& i : msgs)
-        val.records.emplace_back(i.first + ": " + i.second);
+        ret.emplace_back(dnspp::response {
+                           .name = {i.first, "dnschat"},
+                           .value=dnspp::response::txt{.records={i.second}}
+                         });
     }
     else {
       msgs.emplace_back(req.name.at(1), req.name.at(0));
-      resp.value = dnspp::response::txt{.records={"Success"}};
+      ret.emplace_back(dnspp::response {
+                         .name = req.name,
+                         .value = dnspp::response::txt{.records={"Success"}}
+                       });
     }
 
     return ret;
