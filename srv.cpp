@@ -2,9 +2,10 @@
 
 #include <iostream>
 
-int main() {
+int main(int argc, char** argv) {
+  int port = argc > 1 ? std::atoi(argv[1]) : 53;
   boost::asio::io_context ctx;
-  dnspp::server d(&ctx, 8053);
+  dnspp::server d(&ctx, port);
   d.recv.connect([](const dnspp::request& req) -> std::vector<dnspp::response> {
     return {
       {

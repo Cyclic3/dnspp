@@ -4,11 +4,12 @@ project(dnspp VERSION 0.0.1)
 find_package(Boost REQUIRED COMPONENTS system)
 find_package(Threads REQUIRED)
 
-add_library(dnspp STATIC dnspp.cpp)
+add_library(dnspp dnspp.cpp)
 
 target_link_libraries(dnspp
   PUBLIC
   Boost::boost
+  Boost::system
   Threads::Threads
 )
 
