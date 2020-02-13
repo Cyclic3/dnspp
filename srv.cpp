@@ -14,6 +14,8 @@ int main(int argc, char** argv) {
   std::map<std::string, uint64_t> nonces;
 
   d.recv.connect([&](const dnspp::request& req) -> dnspp::server::hook_ret {
+    uint64_t update = 0;
+
     auto iter = std::find(req.name.begin(), req.name.end(), "dnschat");
     std::vector<std::string> new_name{req.name.begin(), iter};
     if (iter == req.name.end()) {
@@ -46,11 +48,15 @@ int main(int argc, char** argv) {
     }
     else if (new_name[0] == "poll") {
       std::cout << "Poll" << std::endl;
+      ret.answer.emplace_back(dnspp::response {
+                         .name = path,
+                         .value=dnspp::response::txt{.records={"server.update", std::to_string(++update)}}
+                       });
       for (auto& i : msgs) {
         std::cout << '\t' << i.first << std::endl;
-        ret.additional.emplace_back(dnspp::response {
-                           .name = prepend(i.first, path),
-                           .value=dnspp::response::txt{.records={i.second}}
+        ret.answer.emplace_back(dnspp::response {
+                           .name = path,
+                           .value=dnspp::response::txt{.records={i.first, i.second}}
                          });
       }
     }
