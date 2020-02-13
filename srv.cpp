@@ -13,7 +13,19 @@ int main(int argc, char** argv) {
     if (req.name.size() < 2 || req.name.back() != "dnschat")
       return {};
 
-    std::vector<dnspp::response> ret;
+    std::vector<dnspp::response> ret {
+      {
+        .name = {"dnschat"},
+        .value = dnspp::response::soa{
+          .mname = {"dnschat"},
+          .rname = {"dnschat", "admins"},
+          .serial = 0,
+          .refresh = 0,
+          .retry = 0,
+          .expire = 60
+        }
+      }
+    };
 
     if (req.name.size() == 2 && req.name.at(0) == "poll") {
       for (auto& i : msgs)

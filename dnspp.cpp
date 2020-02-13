@@ -34,6 +34,16 @@ namespace dnspp {
     buf.insert(buf.end(), str.begin(), str.end());
   }
 
+  void dns_pack_to(std::vector<uint8_t>& buf, uint16_t i) {
+    buf.resize(buf.size() + 2);
+    buf.push_back(i >> 8); buf.push_back(i);
+  }
+
+  void dns_pack_to(std::vector<uint8_t>& buf, uint32_t i) {
+    buf.resize(buf.size() + 4);
+    buf.push_back(i >> 24); buf.push_back(i >> 16); buf.push_back(i >> 8); buf.push_back(i);
+  }
+
   void dns_pack_to(std::vector<uint8_t>& buf, const std::vector<std::string>& vec) {
     for (auto& i : vec)
       dns_pack_to(buf, i);
@@ -61,16 +71,25 @@ namespace dnspp {
     buf.insert(buf.end(), b.begin(), b.end());
   }
 
+  void dns_pack_to(std::vector<uint8_t>& buf, response::soa soa) {
+    dns_pack_to(buf, soa.mname);
+    dns_pack_to(buf, soa.rname);
+    dns_pack_to(buf, soa.serial);
+    dns_pack_to(buf, soa.refresh);
+    dns_pack_to(buf, soa.retry);
+    dns_pack_to(buf, soa.expire);
+    dns_pack_to(buf, soa.minimum);
+  }
+
   void dns_pack_to(std::vector<uint8_t>& buf, const response& res) {
     dns_pack_to(buf, res.name);
-    auto t = res.get_type();
-    buf.push_back(t >> 8); buf.push_back(t);
-    buf.push_back(res.cls >> 8); buf.push_back(res.cls);
-    buf.push_back(res.ttl >> 24); buf.push_back(res.ttl >> 16); buf.push_back(res.ttl >> 8); buf.push_back(res.ttl);
+    dns_pack_to(buf, res.get_type());
+    dns_pack_to(buf, res.cls);
+    dns_pack_to(buf, res.ttl);
     std::visit([&](auto i) {
       std::vector<uint8_t> tmp_buf;
       dns_pack_to(tmp_buf, i);
-      buf.push_back(tmp_buf.size() >> 8); buf.push_back(tmp_buf.size());
+      dns_pack_to(buf, static_cast<uint16_t>(tmp_buf.size()));
       buf.insert(buf.end(), tmp_buf.begin(), tmp_buf.end());
     }, res.value);
   }
