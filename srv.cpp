@@ -8,7 +8,7 @@ int main(int argc, char** argv) {
   dnspp::server d(&ctx, port);
 
   std::vector<std::pair<std::string, std::string>> msgs;
-  std::map<std::string, int> nonces;
+  std::map<std::string, uint64_t> nonces;
 
   d.recv.connect([&](const dnspp::request& req) -> std::vector<dnspp::response> {
     auto iter = std::find(req.name.begin(), req.name.end(), "dnschat");
@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
     else {
       auto& msg = req.name.at(0);
       auto& uname = req.name.at(1);
-      auto i = std::stoi(req.name.at(2));
+      auto i = std::stoull(req.name.at(2));
       auto nonce_iter = nonces.find(uname);
       if (nonce_iter == nonces.end()) {
         nonces.emplace(uname, i);
@@ -56,10 +56,10 @@ int main(int argc, char** argv) {
                            .value = dnspp::response::txt{.records={"Registered user! Increment nonce and fire away!"}}
                          });
       }
-      else if (i <= nonce_iter->second) {
+      else if (nonce_iter->second + 1 != i) {
         ret.emplace_back(dnspp::response {
                            .name = req.name,
-                           .value = dnspp::response::txt{.records={"Nonce needs to increase"}}
+                           .value = dnspp::response::txt{.records={"Nonce needs to increase by 1!"}}
                          });
       }
       else {
