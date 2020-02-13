@@ -116,12 +116,12 @@ namespace dnspp {
           iter += section_len;
           req.name.emplace_back(reinterpret_cast<char*>(&*begin), section_len);
         }
-        req.type = static_cast<type>(*iter++ >> 8);
-        req.type = static_cast<type>(req.type | *iter++);
-        req.cls = static_cast<cls>(*iter++ >> 8);
-        req.cls = static_cast<cls>(req.cls | *iter++);
+        req.type = static_cast<type_t>(*iter++ >> 8);
+        req.type = static_cast<type_t>(req.type | *iter++);
+        req.cls = static_cast<class_t>(*iter++ >> 8);
+        req.cls = static_cast<class_t>(req.cls | *iter++);
 
-        rcode rc;
+        rcode_t rc;
 
         concat_responses responses;
 
@@ -129,7 +129,7 @@ namespace dnspp {
           responses = recv(req);
           rc = RCODE_noerror;
         }
-        catch (rcode rc_err) {
+        catch (rcode_t rc_err) {
           rc = rc_err;
         }
         catch (...) {

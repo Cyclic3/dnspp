@@ -5,7 +5,7 @@
 #include <variant>
 
 namespace dnspp {
-  enum type : uint16_t {
+  enum type_t : uint16_t {
     TYPE_A = 1,
     TYPE_NS = 2,
     TYPE_CNAME = 5,
@@ -23,7 +23,7 @@ namespace dnspp {
     TYPE_RRSIG = 36,
   };
 
-  enum rcode : uint16_t {
+  enum rcode_t : uint16_t {
     RCODE_noerror     =  0,
     RCODE_formerr     =  1,
     RCODE_servfail    =  2,
@@ -33,14 +33,14 @@ namespace dnspp {
     RCODE_mask        = 15,
   };
 
-  enum cls : uint16_t {
+  enum class_t : uint16_t {
     CLASS_IN = 0x1
   };
 
   struct request {
     std::vector<std::string> name;
-    cls cls = CLASS_IN;
-    type type;
+    class_t cls = CLASS_IN;
+    type_t type;
   };
 
   struct response {
@@ -55,12 +55,12 @@ namespace dnspp {
     };
 
     std::vector<std::string> name;
-    cls cls = CLASS_IN;
+    class_t cls = CLASS_IN;
     uint32_t ttl = 0;
     std::variant<txt, a, aaaa> value;
 
-    type get_type() const noexcept {
-      constexpr type arr[] = {TYPE_TXT, TYPE_A, TYPE_AAAA};
+    type_t get_type() const noexcept {
+      constexpr type_t arr[] = {TYPE_TXT, TYPE_A, TYPE_AAAA};
       return arr[value.index()];
     }
   };
