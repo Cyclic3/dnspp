@@ -49,13 +49,13 @@ int main(int argc, char** argv) {
     else if (new_name[0] == "poll") {
       std::cout << "Poll" << std::endl;
       ret.answer.emplace_back(dnspp::response {
-                         .name = path,
+                         .name = req.name,
                          .value=dnspp::response::txt{.records={"server.update", std::to_string(++update)}}
                        });
       for (auto& i : msgs) {
         std::cout << '\t' << i.first << std::endl;
         ret.answer.emplace_back(dnspp::response {
-                           .name = path,
+                           .name = req.name,
                            .value=dnspp::response::txt{.records={i.first, i.second}}
                          });
       }
