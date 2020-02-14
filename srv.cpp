@@ -90,7 +90,7 @@ int main(int argc, char** argv) {
                            .value = dnspp::response::txt{.records={"Registered user! Increment nonce and fire away!"}}
                          });
       }
-      else if (nonce_iter->second - i >= 16 && i - nonce_iter->second >= 16) {
+      else if (nonce_iter->second >= i || i - nonce_iter->second >= 16) {
         ret.answer.emplace_back(dnspp::response {
                            .name = req.name,
                            .value = dnspp::response::txt{.records={"Nonce needs to increase by 1!"}}
