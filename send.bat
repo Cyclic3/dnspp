@@ -1,4 +1,11 @@
-cls
 :top
-nslookup -type=txt poll-concat.dnschat dns.c3murk.dev
+if not exist "%userprofile%\.dnschat_counter" (
+  echo 69%random%%random%%random%  > "%userprofile%\.dnschat_counter"
+  REM not cryptographic, but we need no leading 0
+)
+
+set /p dnschat_counter=<%userprofile%\.dnschat_counter
+set /a dnschat_counter=%dnschat_counter + 1
+
+nslookup -type=txt "%2".%1.%dnschat_counter.dnschat dns.c3murk.dev
 goto top
