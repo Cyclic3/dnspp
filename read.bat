@@ -1,5 +1,5 @@
 @echo off
-set buf=%temp%/%random%-dnschat
+set buf=%temp%\%random%-dnschat
 :top
 nslookup -type=txt poll-concat.dnschat dns.c3murk.dev > %buf%
 cls
