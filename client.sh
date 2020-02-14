@@ -7,6 +7,8 @@ dnschat_send() {
 }
 
 dnschat_prompt() {
+  clear
+  sh poll.sh
   echo -n "dnschat> "
   read input
   if [ "$input" = "/exit" ]
@@ -20,5 +22,5 @@ trap dnschat_prompt INT
 
 while(true)
 do
-  watch -n 2 "sh poll.sh"
+  watch -t -n 1 "sh poll.sh"
 done
