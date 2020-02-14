@@ -56,6 +56,7 @@ int main(int argc, char** argv) {
       for (auto& i : msgs) {
         ret.answer.emplace_back(dnspp::response {
           .name = {i.first},
+          .ttl = 1,
           .value=dnspp::response::txt{.records={i.second}}
         });
       }
@@ -65,6 +66,7 @@ int main(int argc, char** argv) {
       for (auto& i : msgs) {
         ret.answer.emplace_back(dnspp::response {
           .name = req.name,
+          .ttl = 1,
           .value=dnspp::response::txt{.records={std::to_string(pos++), i.first, i.second}}
         });
       }
@@ -75,6 +77,7 @@ int main(int argc, char** argv) {
         rec.records.push_back(i.first + ": " + i.second);
       ret.answer.emplace_back(dnspp::response {
                          .name = req.name,
+                         .ttl = 1,
                          .value= std::move(rec)
       });
     }
