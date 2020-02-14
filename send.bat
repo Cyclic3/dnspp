@@ -1,4 +1,3 @@
-cls
 if not exist "%userprofile%\.dnschat_counter" (
   echo %random%%random%  > "%userprofile%\.dnschat_counter"
   REM not cryptographic, but we need no leading 0
