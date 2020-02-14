@@ -1,0 +1,62 @@
+<html>
+<head>
+<style>
+  form { display: flex; }
+  #msg_box { width: 100%; height: 80%; }
+  #send_box { flex-grow: 8; }
+  #send { flex-grow: 2; }
+</style>
+</head>
+
+<body>
+<textarea id="msg_box">
+</textarea>
+<form action="javascript:send_form()">
+  <input type="text" id="send_box"/>
+  <input type="submit" id="send" value="Send"/>
+</form>
+</body>
+</html>
+
+<footer>
+<script>
+  function get_cookie(name) {
+    var value = "; " + document.cookie;
+    var parts = value.split("; " + name + "=");
+    if (parts.length == 2) return parts.pop().split(";").shift();
+    else return undefined;
+  }
+
+  let uname = get_cookie("uname");
+  if (uname == undefined) {
+    uname = prompt("Username");
+    document.cookie = "uname=" + uname
+  }
+
+  function get_nonce() {
+    let ret = get_cookie("nonce")
+    if (ret == undefined) {
+      let arr = new Uint32Array(2)
+      window.crypto.getRandomValues(arr)
+      ret = abs((arr[0] << 32 | arr[1]) >> (64 - 53))
+    }
+    document.cookie = "nonce=" + ++ret;
+    return ret;
+  }
+
+  let input = document.getElementById("send_box");
+  let output = document.getElementById("msg_box");
+
+  function send_form() {
+    msg = input.value;
+    input.value = "";
+    const dummy_req = new Request(
+      "http://" + msg + "." + uname + "." + get_nonce() +
+      ".dnschat.foo.gifter.cf"
+    );
+    fetch(dummy_req)
+  }
+
+  // TODO: brute force NXDOMAIN
+</script>
+</footer>
