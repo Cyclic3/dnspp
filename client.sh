@@ -1,6 +1,6 @@
 export DNSCHAT_COUNTER=$(cat ~/.dnschat_counter)
 export DNSCHAT_USER=$1
-
+export DNSCHAT_LINES=$(($(tput lines) - 2))
 export DNSCHAT_MODE=$2
 
 if [ -z $DNSCHAT_MODE ]
@@ -24,8 +24,9 @@ esac
 
 dnschat_prompt() {
   clear
-  $DNSCHAT_POLL
-  echo -n "dnschat> "
+  $DNSCHAT_POLL | tail -n $DNSCHAT_LINES
+  echo
+  printf "dnschat\e[1;32m> \e[0m"
   read input
   if [ "$input" = ".exit" ]
   then
@@ -38,5 +39,5 @@ trap dnschat_prompt INT
 
 while(true)
 do
-  watch -t -n 1 $DNSCHAT_POLL
+  watch -t -n 1 "$DNSCHAT_POLL | tail -n $DNSCHAT_LINES"
 done
