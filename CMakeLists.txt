@@ -5,7 +5,7 @@ find_package(Boost REQUIRED COMPONENTS system)
 find_package(Threads REQUIRED)
 
 add_library(dnspp dnspp.cpp)
-set(${PROJECT_NAMESPACE} DnsPP)
+set(PROJECT_NAMESPACE DnsPP)
 
 target_link_libraries(dnspp
   PUBLIC
