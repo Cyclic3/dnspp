@@ -1,7 +1,9 @@
 #include <boost/asio/ip/udp.hpp>
-#include <boost/signals2.hpp>
+#include <boost/asio/thread_pool.hpp>
+#include <boost/signals2/signal.hpp>
 
 #include <optional>
+#include <thread>
 #include <variant>
 
 namespace dnspp {
@@ -83,6 +85,7 @@ namespace dnspp {
       std::vector<response> an;
       std::vector<response> ns;
       std::vector<response> ad;
+      rcode_t rcode;
     };
 
     struct dns_concat {
@@ -92,8 +95,11 @@ namespace dnspp {
       result_type operator()(InputIterator first, InputIterator last) const {
         concat_responses ret;
         for (; first != last; ++first) {
+          if (ret.rcode != RCODE_servfail && first->rcode != RCODE_noerror)
+            ret.rcode = (ret.rcode != RCODE_noerror ? RCODE_servfail : first->rcode);
+
           for (const response& resp : first->answer) {
-            if (resp.get_type() == TYPE_NS)
+            if (resp.get_type() == TYPE_NS || resp.get_type() == TYPE_SOA)
               ret.ns.push_back(resp);
             else
               ret.an.push_back(resp);
@@ -107,12 +113,15 @@ namespace dnspp {
     struct hook_ret {
       std::vector<response> answer;
       std::vector<response> additional;
+      rcode_t rcode = RCODE_noerror;
     };
 
   private:
+    boost::asio::io_context* io_ctx;
     boost::asio::ip::udp::socket sock;
     std::array<uint8_t, 512> buf;
     boost::asio::ip::udp::endpoint remote;
+    boost::asio::thread_pool responder_pool{1024};
 
   private:
     void start_receive();

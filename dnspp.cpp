@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include <boost/asio/post.hpp>
+
 #include <boost/algorithm/string/split.hpp>
 
 namespace dnspp {
@@ -121,6 +123,7 @@ namespace dnspp {
   }
 
   void server::start_receive() {
+
     sock.async_receive_from(boost::asio::buffer(buf), remote, [&] (const boost::system::error_code& err, auto len) {
       try {
         if (err || len < 12)
@@ -166,44 +169,46 @@ namespace dnspp {
         req.cls = static_cast<class_t>(*iter++ >> 8);
         req.cls = static_cast<class_t>(req.cls | *iter++);
 
-        rcode_t rc;
+        boost::asio::post(responder_pool, [this, buf{std::move(buf)}, req{std::move(req)}]() {
+          concat_responses responses;
 
-        concat_responses responses;
+          try {
+            responses = recv(req);
+            responses.rcode = RCODE_noerror;
+          }
+          catch (rcode_t rc_err) {
+            responses.rcode = rc_err;
+          }
+          catch (std::exception& e) {
+            for (auto& i : req.name)
+              std::cerr << i << '.';
+            std::cerr << ": " << e.what() << std::endl;
+            responses.rcode = RCODE_servfail;
+          }
 
-        try {
-          responses = recv(req);
-          rc = RCODE_noerror;
-        }
-        catch (rcode_t rc_err) {
-          rc = rc_err;
-        }
-        catch (std::exception& e) {
-          std::cout << e.what() << std::endl;
-          rc = RCODE_servfail;
-        }
+          std::vector<uint8_t> response_buf;
+          response_buf.reserve(12);
+          response_buf.insert(response_buf.end(),buf.begin(), buf.begin() + 2);
+          response_buf.push_back(QR_reply);
+          response_buf.push_back(responses.rcode);
+          response_buf.push_back(0);response_buf.push_back(1); // 1 query
+          response_buf.push_back(responses.an.size()>>8); response_buf.push_back(responses.an.size());
+          response_buf.push_back(responses.ns.size()>>8); response_buf.push_back(responses.ns.size());
+          response_buf.push_back(responses.ad.size()>>8); response_buf.push_back(responses.ad.size());
 
-        std::vector<uint8_t> response_buf;
-        response_buf.reserve(12);
-        response_buf.insert(response_buf.end(),buf.begin(), buf.begin() + 2);
-        response_buf.push_back(QR_reply);
-        response_buf.push_back(rc);
-        response_buf.push_back(0);response_buf.push_back(1); // 1 query
-        response_buf.push_back(responses.an.size()>>8); response_buf.push_back(responses.an.size());
-        response_buf.push_back(responses.ns.size()>>8); response_buf.push_back(responses.ns.size());
-        response_buf.push_back(responses.ad.size()>>8); response_buf.push_back(responses.ad.size());
+          dns_pack_to(response_buf, req);
 
-        dns_pack_to(response_buf, req);
+          for (auto& i : responses.an)
+            dns_pack_to(response_buf, i);
 
-        for (auto& i : responses.an)
-          dns_pack_to(response_buf, i);
+          for (auto& i : responses.ns)
+            dns_pack_to(response_buf, i);
 
-        for (auto& i : responses.ns)
-          dns_pack_to(response_buf, i);
+          for (auto& i : responses.ad)
+            dns_pack_to(response_buf, i);
 
-        for (auto& i : responses.ad)
-          dns_pack_to(response_buf, i);
-
-        sock.async_send_to(boost::asio::buffer(response_buf), remote, [](auto...) {});
+          sock.async_send_to(boost::asio::buffer(response_buf), remote, [](auto...) {});
+        });
       }
       catch(...) { goto next; }
 
@@ -212,8 +217,9 @@ namespace dnspp {
     });
   }
 
-  server::server(boost::asio::io_context* io_ctx, uint16_t port) :
+  server::server(boost::asio::io_context* io_ctx_, uint16_t port) :
     //udp::v6()
+    io_ctx{io_ctx_},
     sock{*io_ctx, udp::endpoint{boost::asio::ip::udp::v4(), port}} {
     start_receive();
   }

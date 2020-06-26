@@ -5,6 +5,7 @@ find_package(Boost REQUIRED COMPONENTS system)
 find_package(Threads REQUIRED)
 
 add_library(dnspp dnspp.cpp)
+set(${PROJECT_NAMESPACE} DnsPP)
 
 target_link_libraries(dnspp
   PUBLIC
@@ -55,5 +56,5 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/include DESTINATION include)
 
 add_library(${PROJECT_NAMESPACE}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
-add_executable(dnsppd srv.cpp)
-target_link_libraries(dnsppd dnspp)
+#add_executable(dnsppd srv.cpp)
+#target_link_libraries(dnsppd dnspp)

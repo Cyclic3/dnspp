@@ -1,11 +1,74 @@
 #include "dnspp.hpp"
 
+#include <boost/asio/deadline_timer.hpp>
+
 #include <iostream>
 
 template<typename T>
 std::vector<T> prepend(const T& a, std::vector<T> v) { v.insert(v.begin(), a); return v; }
 
 int main(int argc, char** argv) {
+  if (argc != 2)
+    return -1;
+  std::string data = argv[1];
+  uint64_t data_bits = data.size();
+  data_bits *= 8;
+
+  boost::asio::io_context ctx;
+  dnspp::server d(&ctx, 53);
+
+  d.recv.connect([&](const dnspp::request& req) -> dnspp::server::hook_ret {
+    dnspp::server::hook_ret ret;
+
+    ret.answer.push_back(dnspp::response{
+      .name = {"xflt","c3murk","dev"},
+      .ttl = 60,
+      .value=dnspp::response::soa{
+                                 .mname = {"dns","c3murk","dev"},
+                                 .rname = {"fakemail","c3murk","dev"},
+                                 .serial = 20200411,
+                                 .refresh = 3600,
+                                 .retry = 1200,
+                                 .expire = 604800,
+                                 .minimum = 3600
+                               }
+    });
+
+    return ret;
+  });
+
+  d.recv.connect([&](const dnspp::request& req) -> dnspp::server::hook_ret {
+    dnspp::server::hook_ret ret;
+    ret.rcode = dnspp::rcode_t::RCODE_nxdomain;
+
+    auto cmd = req.name.at(0);
+    if (cmd.size() != 1)
+      return ret;
+
+    char mode = cmd.front();
+
+    bool is_set;
+
+    int64_t arg = std::stoull(req.name.at(1), 0, 16);
+
+    switch (mode) {
+      case 'r': is_set = arg;                                 break;
+      case 's': is_set = (data_bits >> (arg)) & 1;            break;
+      case 'd': is_set = (data.at(arg / 8) >> (arg % 8)) & 1; break;
+      default: { is_set = false; ret.rcode = dnspp::RCODE_notimp; }
+    }
+
+    std::cout << mode << '(' << arg << (is_set ? ") set" : ") not set") << std::endl;
+
+
+    if (is_set)
+      std::this_thread::sleep_for(std::chrono::milliseconds{100});
+
+    return ret;
+  });
+
+  ctx.run();
+  /*
   int port = argc > 1 ? std::atoi(argv[1]) : 53;
   boost::asio::io_context ctx;
   dnspp::server d(&ctx, port);
@@ -113,4 +176,5 @@ int main(int argc, char** argv) {
     return ret;
   });
   ctx.run();
+  */
 }

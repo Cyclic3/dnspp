@@ -1,0 +1,24 @@
+<html>
+<script>
+async function is_valid(url) {
+  const req = new Request(url);
+  var ret = true;
+  var begin = performance.now();
+  await fetch(req, {'mode':'no-cors'}).catch(e => { console.log(e); ret = false;});
+  var end = performance.now();
+  console.log(url + " " + (end - begin));
+  return ret;
+}
+async function brute(base) {
+  while
+}
+is_valid("http://gkajgklasjg").then(res => console.log(res));
+is_valid("http://gkajgklasjg").then(res => console.log(res));
+is_valid("http://localhost.liv.ac.uk").then(res => console.log(res));
+is_valid("http://localhost.liv.ac.uk").then(res => console.log(res));
+is_valid("http://gkajgklasjg").then(res => console.log(res));
+is_valid("http://gkajgklasjg").then(res => console.log(res));
+is_valid("http://localhost.liv.ac.uk").then(res => console.log(res));
+is_valid("http://localhost.liv.ac.uk").then(res => console.log(res));
+</script>
+</html>
