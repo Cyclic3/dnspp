@@ -40,6 +40,7 @@ namespace dnspp {
   };
 
   struct request {
+    boost::asio::ip::udp::endpoint src;
     std::vector<std::string> name;
     class_t cls = CLASS_IN;
     type_t type;

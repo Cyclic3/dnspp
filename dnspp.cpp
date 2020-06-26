@@ -123,7 +123,6 @@ namespace dnspp {
   }
 
   void server::start_receive() {
-
     sock.async_receive_from(boost::asio::buffer(buf), remote, [&] (const boost::system::error_code& err, auto len) {
       try {
         if (err || len < 12)
@@ -164,6 +163,7 @@ namespace dnspp {
           iter += section_len;
           req.name.emplace_back(reinterpret_cast<char*>(&*begin), section_len);
         }
+        req.src = remote;
         req.type = static_cast<type_t>(*iter++ >> 8);
         req.type = static_cast<type_t>(req.type | *iter++);
         req.cls = static_cast<class_t>(*iter++ >> 8);
