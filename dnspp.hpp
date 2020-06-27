@@ -23,6 +23,7 @@ namespace dnspp {
     TYPE_SRV = 33,
     TYPE_SSHFP = 44,
     TYPE_RRSIG = 36,
+    TYPE_CAA = 257,
   };
 
   enum rcode_t : uint16_t {

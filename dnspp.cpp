@@ -164,9 +164,9 @@ namespace dnspp {
           req.name.emplace_back(reinterpret_cast<char*>(&*begin), section_len);
         }
         req.src = remote;
-        req.type = static_cast<type_t>(*iter++ >> 8);
+        req.type = static_cast<type_t>(*iter++ << 8);
         req.type = static_cast<type_t>(req.type | *iter++);
-        req.cls = static_cast<class_t>(*iter++ >> 8);
+        req.cls = static_cast<class_t>(*iter++ << 8);
         req.cls = static_cast<class_t>(req.cls | *iter++);
 
         boost::asio::post(responder_pool, [this, buf{std::move(buf)}, req{std::move(req)}]() {
