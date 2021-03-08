@@ -100,12 +100,8 @@ namespace dnspp {
           if (ret.rcode != RCODE_servfail && first->rcode != RCODE_noerror)
             ret.rcode = (ret.rcode != RCODE_noerror ? RCODE_servfail : first->rcode);
 
-          for (const response& resp : first->answer) {
-            if (resp.get_type() == TYPE_NS)
-              ret.ns.push_back(resp);
-            else
-              ret.an.push_back(resp);
-          }
+          ret.an.insert(ret.an.end(), first->answer.begin(), first->answer.end());
+          ret.ns.insert(ret.ns.end(), first->authority.begin(), first->authority.end());
           ret.ad.insert(ret.ad.end(), first->additional.begin(), first->additional.end());
         }
         return ret;
@@ -114,6 +110,7 @@ namespace dnspp {
   public:
     struct hook_ret {
       std::vector<response> answer;
+      std::vector<response> authority;
       std::vector<response> additional;
       rcode_t rcode = RCODE_noerror;
     };
