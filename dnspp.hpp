@@ -101,7 +101,7 @@ namespace dnspp {
             ret.rcode = (ret.rcode != RCODE_noerror ? RCODE_servfail : first->rcode);
 
           for (const response& resp : first->answer) {
-            if (resp.get_type() == TYPE_NS || resp.get_type() == TYPE_SOA)
+            if (resp.get_type() == TYPE_NS)
               ret.ns.push_back(resp);
             else
               ret.an.push_back(resp);
